@@ -1,8 +1,10 @@
 # {{ ansible_managed }}
 
+# fix error 502 after reboot
+resolver localhost ipv6=off;
+
 server {
-  # Schlangenprogrammiernacht will be reachable under localhost:3000
-  listen 3000;
+  listen {{ schlangenprogrammierspiel.web_port | default(80) }};
   server_name localhost;
 
   location / {

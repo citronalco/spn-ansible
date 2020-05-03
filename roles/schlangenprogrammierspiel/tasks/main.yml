@@ -8,7 +8,7 @@
     name: "/etc/spn"
     state: directory
 
-# Configuration files - database
+## Configuration files - database
 - name: Check if database configuration file exists
   stat:
     path: "/etc/spn/db.conf"
@@ -18,6 +18,7 @@
   template:
     src: "db.conf.j2"
     dest: "/etc/spn/db.conf"
+    mode: "0600"
   when: not conf_db_file.stat.exists
 
 - name: Read database configuration file
@@ -32,7 +33,7 @@
     mysql_user: '{{ conf_db_data["content"] | b64decode | regex_findall("MYSQL_USER\s*=\s*(.+)") | first }}'
     mysql_password: '{{ conf_db_data["content"] | b64decode | regex_findall("MYSQL_PASSWORD\s*=\s*(.+)") | first }}'
 
-# Configuration files - django
+## Configuration files - django
 - name: Check if django configuration file exists
   stat:
     path: "/etc/spn/django.conf"
@@ -42,6 +43,7 @@
   template:
     src: "django.conf.j2"
     dest: "/etc/spn/django.conf"
+    mode: "0600"
   when: not conf_django_file.stat.exists
 
 - name: Read database configuration file
@@ -53,6 +55,7 @@
   set_fact:
     django_secret_key: '{{ conf_django_data["content"] | b64decode | regex_findall("SECRET_KEY\s*=\s*(.+)") | first }}'
 
+# Follow installation instructions
 - name: Clone git repository incl. submodules
   git:
     repo: "{{ schlangenprogrammierspiel.git_repository | default('https://github.com/schlangenprogrammiernacht/spn-meta.git') }}"
@@ -147,17 +150,23 @@
     state: "directory"
 
 # Nginx
-- name: Create Nginx config
+- name: Create SPN Nginx site config
   template:
     src: "nginx.conf.j2"
     dest: "/etc/nginx/sites-available/spn"
   notify: restart nginx
 
-- name: Enable Nginx config
+- name: Enable SPN Nginx site config
   file:
     src: "/etc/nginx/sites-available/spn"
     dest: "/etc/nginx/sites-enabled/spn"
     state: link
+  notify: restart nginx
+
+- name: Disable default Nginx site config
+  file:
+    name: "/etc/nginx/sites-enabled/default"
+    state: absent
   notify: restart nginx
 
 # Systemd services
@@ -174,12 +183,6 @@
   notify: reload systemd daemon
 
 - name: Enable and start spn.target
-  systemd:
-    name: spn.target
-    enabled: yes
-    state: started
-
-- name: Start Schlangenprogrammierspiel
   systemd:
     name: spn.target
     enabled: yes
