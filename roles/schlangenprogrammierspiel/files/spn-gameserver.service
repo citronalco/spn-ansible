@@ -1,0 +1,16 @@
+# Ansible managed
+
+[Unit]
+Description=Schlangenprogrammierspiel Gameserver
+After=network-online.target
+PartOf=spn.target
+
+[Service]
+EnvironmentFile=/etc/spn/db.conf
+WorkingDirectory=/opt/spn_meta
+User=spn
+ExecStart=/opt/spn_meta/helper_scripts/run_gameserver.sh
+Restart=on-failure
+
+[Install]
+WantedBy=spn.target

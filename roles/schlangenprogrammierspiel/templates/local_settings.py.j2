@@ -1,0 +1,16 @@
+# {{ ansible_managed }}
+
+DEBUG = False
+SECRET_KEY = '{{ django_secret_key }}'
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': '{{ mysql_db }}',
+        'USER': '{{ mysql_user }}',
+        'PASSWORD': '{{ mysql_password }}',
+        'HOST': '{{ mysql_host }}',
+        'PORT': '3306',
+    }
+}
+STATIC_ROOT = '/opt/spn_static'
+ALLOWED_HOSTS = ['localhost']

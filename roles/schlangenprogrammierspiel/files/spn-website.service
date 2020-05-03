@@ -1,0 +1,15 @@
+# Ansible managed
+
+[Unit]
+Description=Schlangenprogrammierspiel Website
+After=network-online.target
+PartOf=spn.target
+
+[Service]
+WorkingDirectory=/opt/spn_meta
+User=spn
+ExecStart=/opt/spn_meta/helper_scripts/run_dev_website.sh
+Restart=on-failure
+
+[Install]
+WantedBy=spn.target

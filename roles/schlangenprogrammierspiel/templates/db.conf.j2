@@ -1,0 +1,6 @@
+# {{ ansible_managed }}
+
+MYSQL_HOST={{ schlangenprogrammierspiel.database.host | default ("localhost") }}
+MYSQL_DB={{ schlangenprogrammierspiel.database.db | default ("spn") }}
+MYSQL_USER={{ schlangenprogrammierspiel.database.user | default ("spn") }}
+MYSQL_PASSWORD={{ schlangenprogrammierspiel.database.password | default(lookup('password','/dev/null length=16')) }}

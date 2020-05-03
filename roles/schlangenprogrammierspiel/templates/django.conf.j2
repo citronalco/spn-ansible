@@ -1,0 +1,3 @@
+# {{ ansible_managed }}
+
+SECRET_KEY={{ schlangenprogrammierspiel.django.secretkey | default(lookup('password','/dev/null length=32')) }}

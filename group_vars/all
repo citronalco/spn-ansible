@@ -1,0 +1,13 @@
+ansible_python_interpreter: /usr/bin/python3
+
+# all variables are optional, defaults are listed below
+#schlangenprogrammierspiel:
+#  git_repository: https://github.com/schlangenprogrammiernacht/spn-meta.git
+#  database:
+#    host: localhost
+#    db: spn
+#    user: spn
+#    password: randomGeneratedPassword
+#  django:
+#    # secret_key has 32 characters
+#    secret_key: GetsReplacedByRandomGeneratedPwd

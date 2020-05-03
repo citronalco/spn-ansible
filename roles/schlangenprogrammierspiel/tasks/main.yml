@@ -1,0 +1,186 @@
+- name: Install prerequisites
+  apt:
+    pkg: [ 'git', 'nginx', 'python3-pymysql' ]
+
+# Configuration files
+- name: Create configuration directory /etc/spn
+  file:
+    name: "/etc/spn"
+    state: directory
+
+# Configuration files - database
+- name: Check if database configuration file exists
+  stat:
+    path: "/etc/spn/db.conf"
+  register: conf_db_file
+
+- name: Create missing database configuration file
+  template:
+    src: "db.conf.j2"
+    dest: "/etc/spn/db.conf"
+  when: not conf_db_file.stat.exists
+
+- name: Read database configuration file
+  slurp:
+    src: "/etc/spn/db.conf"
+  register: conf_db_data
+
+- name: Extract configuration from /etc/spn/db.conf
+  set_fact:
+    mysql_host: '{{ conf_db_data["content"] | b64decode | regex_findall("MYSQL_HOST\s*=\s*(.+)") | first }}'
+    mysql_db: '{{ conf_db_data["content"] | b64decode | regex_findall("MYSQL_DB\s*=\s*(.+)") | first }}'
+    mysql_user: '{{ conf_db_data["content"] | b64decode | regex_findall("MYSQL_USER\s*=\s*(.+)") | first }}'
+    mysql_password: '{{ conf_db_data["content"] | b64decode | regex_findall("MYSQL_PASSWORD\s*=\s*(.+)") | first }}'
+
+# Configuration files - django
+- name: Check if django configuration file exists
+  stat:
+    path: "/etc/spn/django.conf"
+  register: conf_django_file
+
+- name: Create missing django configuration file
+  template:
+    src: "django.conf.j2"
+    dest: "/etc/spn/django.conf"
+  when: not conf_django_file.stat.exists
+
+- name: Read database configuration file
+  slurp:
+    src: "/etc/spn/django.conf"
+  register: conf_django_data
+
+- name: Extract configuration from /etc/spn/db.conf
+  set_fact:
+    django_secret_key: '{{ conf_django_data["content"] | b64decode | regex_findall("SECRET_KEY\s*=\s*(.+)") | first }}'
+
+- name: Clone git repository incl. submodules
+  git:
+    repo: "{{ schlangenprogrammierspiel.git_repository | default('https://github.com/schlangenprogrammiernacht/spn-meta.git') }}"
+    dest: "/opt/spn_meta"
+  register: git_clone
+
+- name: Install packages listed in spn_meta/install_deps_debian.sh
+  apt:
+    pkg: [ 'g++', 'libeigen3-dev', 'mariadb-server', 'libmysqlcppconn-dev', 'zlib1g-dev', 'libpython3-dev', 'libjpeg-dev', 'docker.io', 'cmake', 'libssl-dev', 'python3-venv', 'libmariadbclient-dev', 'libmariadb-dev-compat', 'doxygen' ]
+
+- name: Use journald for Docker logging
+  copy:
+    src: "docker-daemon.json"
+    dest: "/etc/docker/daemon.json"
+  notify: restart docker
+
+# User
+- name: Create service user
+  user:
+    name: "spn"
+    group: "docker"
+    home: "/var/lib/spn"
+    system: true
+
+# SHM
+- name: Create and enable shared memory mount
+  mount:
+    path: "/mnt/spn_shm"
+    src: "none"
+    fstype: "tmpfs"
+    opts: "size=1G,noexec,uid=spn"
+    state: mounted
+
+# Database
+- name: Create database
+  mysql_db:
+    name: "{{ mysql_db }}"
+    login_unix_socket: "/run/mysqld/mysqld.sock"
+
+- name: Create database user
+  mysql_user:
+    name: "{{ mysql_user }}"
+    password: "{{ mysql_password }}"
+    host: "{{ mysql_host }}"
+    priv: "{{ mysql_db }}.*:ALL"
+    login_unix_socket: "/run/mysqld/mysqld.sock"
+
+- name: Create local_settings.py
+  template:
+    src: "local_settings.py.j2"
+    dest: "/opt/spn_meta/website/Programmierspiel/local_settings.py"
+
+# Build
+- name: Build Schlangenprogrammierspiel
+  command:
+    chdir: "/opt/spn_meta"
+    cmd: ./build.sh
+  when: git_clone.changed
+
+- name: Build docker base image for bots
+  command:
+    chdir: "/opt/spn_meta/gameserver/docker4bots"
+    cmd: "./0_build_spn_cpp_base.sh"
+  when: git_clone.changed
+
+- name: Create directory for static website
+  file:
+    name: "/opt/spn_static"
+    state: directory
+
+- name: Build static website
+  shell:
+    chdir: "/opt/spn_meta/website"
+    cmd: ". env/bin/activate; ./manage.py collectstatic --noinput"
+  when: git_clone.changed
+
+- name: Create directory for Doxygen API documentation
+  file:
+    name: "/opt/spn_meta/website/docs/static/docs/doxygen_cpp"
+    state: directory
+
+- name: Build Doxygen API documentation
+  command:
+    chdir: "/opt/spn_meta/website/docs/doxygen"
+    cmd: "doxygen"
+  when: git_clone.changed
+
+- name: Create directory for compiled bots
+  file:
+    name: "/opt/spn_meta/gameserver/docker4bots/compiled_bots"
+    owner: "spn"
+    state: "directory"
+
+# Nginx
+- name: Create Nginx config
+  template:
+    src: "nginx.conf.j2"
+    dest: "/etc/nginx/sites-available/spn"
+  notify: restart nginx
+
+- name: Enable Nginx config
+  file:
+    src: "/etc/nginx/sites-available/spn"
+    dest: "/etc/nginx/sites-enabled/spn"
+    state: link
+  notify: restart nginx
+
+# Systemd services
+- name: Copy systemd service files
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+  loop:
+    - spn.target
+    - spn-builder.service
+    - spn-gameserver.service
+    - spn-relayserver.service
+    - spn-website.service
+  notify: reload systemd daemon
+
+- name: Enable and start spn.target
+  systemd:
+    name: spn.target
+    enabled: yes
+    state: started
+
+- name: Start Schlangenprogrammierspiel
+  systemd:
+    name: spn.target
+    enabled: yes
+    state: started

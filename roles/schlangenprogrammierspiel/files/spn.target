@@ -1,0 +1,8 @@
+# Ansible managed
+
+[Unit]
+Description=Schlangenprogrammierspiel
+Requires=spn-builder.service spn-gameserver.service spn-relayserver.service spn-website.service
+
+[Install]
+WantedBy=multi-user.target
