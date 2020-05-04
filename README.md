@@ -34,7 +34,7 @@ Nach der Installation ist das Schlangenprogrammierspiel auf dem Zielrechner unte
 
 ## Anmerkungen
 ### Apache2-Reverse-Proxy
-Ich hatte ein bisschen zu kämpfen bis ich einen Apache2-Reverse-Proxy vor den Schlangenprogrammierspiel-Webserver zum Laufen gebracht habe.
+Ich hatte ein bisschen zu kämpfen bis ich einen Apache2-Reverse-Proxy vor dem Schlangenprogrammierspiel-Webserver zum Laufen gebracht habe.
 Hier die Konfiguration mit der es schließlich funktioniert hat (das Schlangenprogrammierspiel läuft auf 192.168.3.54, der "web_port" ist 80):
 ```
 RewriteEngine on
