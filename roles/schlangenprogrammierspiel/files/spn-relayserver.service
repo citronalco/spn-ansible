@@ -6,6 +6,8 @@ After=network-online.target
 PartOf=spn.target
 
 [Service]
+IPAddressDeny=any
+IPAddressAllow=localhost
 WorkingDirectory=/opt/spn_meta
 User=spn
 ExecStart=/opt/spn_meta/helper_scripts/run_relayserver.sh
