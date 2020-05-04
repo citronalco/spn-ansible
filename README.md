@@ -8,7 +8,7 @@
 Die Konfiguration ist optional und erfolgt in ``group_vars/all``.
 
 Wenn nichts konfiguriert wird werden die unten angegebenen Standardeinstellungen verwendet.
-"database.password" und "django.secret_key" werden dann auf zufällige Werte gesetzt und in ``/etc/spn/db.conf`` und ``/etc/spn/jenkins.conf`` abgelegt.
+"database.password" und "django.secret_key" werden dann auf zufällige Werte gesetzt und in ``/etc/spn/db.conf`` und ``/etc/spn/django.conf`` abgelegt.
 
 ```
 schlangenprogrammierspiel:
