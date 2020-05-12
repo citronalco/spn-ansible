@@ -5,9 +5,9 @@
 - IP-Adresse des Zielrechners ist in der Datei ``hosts`` eingetragen.
 
 ## Konfiguration:
-Die Konfiguration ist optional und erfolgt in ``group_vars/all``.
+Die Konfiguration ist **komplett optional** und erfolgt in ``group_vars/all``.
 
-Wenn nichts konfiguriert wird werden die unten angegebenen Standardeinstellungen verwendet.
+Wenn nichts konfiguriert wird werden die unten angegebenen Einstellungen verwendet.
 "database.password" und "django.secret_key" werden dann auf zufällige Werte gesetzt und in ``/etc/spn/db.conf`` und ``/etc/spn/django.conf`` abgelegt.
 
 ```
