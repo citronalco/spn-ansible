@@ -1,13 +1,19 @@
-- name: restart docker
+- name: Restart Docker
   service:
     name: docker
     state: restarted
 
-- name: reload systemd daemon
+- name: Reload systemd daemon
   systemd:
     daemon_reload: true
 
-- name: restart nginx
+- name: Restart Nginx
   service:
     name: nginx
+    state: restarted
+
+- name: Restart spn.target
+  systemd:
+    name: spn.target
+    enabled: yes
     state: restarted
