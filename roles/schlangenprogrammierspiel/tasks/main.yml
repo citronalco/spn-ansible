@@ -7,6 +7,7 @@
   file:
     name: "/etc/spn"
     state: directory
+    mode: 0700
 
 ## Configuration files - database
 - name: Check if database configuration file exists
@@ -55,22 +56,25 @@
   set_fact:
     django_secret_key: '{{ conf_django_data["content"] | b64decode | regex_findall("SECRET_KEY\s*=\s*(.+)") | first }}'
 
-# Follow installation instructions
+# Install build requisites
 - name: Clone git repository incl. submodules
   git:
-    repo: "{{ schlangenprogrammierspiel.git_repository | default('https://github.com/schlangenprogrammiernacht/spn-meta.git') }}"
+    repo: "{{ schlangenprogrammierspiel.git.repository | default('https://github.com/schlangenprogrammiernacht/spn-meta.git') }}"
     dest: "/opt/spn_meta"
+    version: "{{ schlangenprogrammierspiel.git.version | default('master') }}"
   register: git_clone
 
-- name: Install packages listed in spn_meta/install_deps_debian.sh
+- name: Install packages as listed in spn_meta/install_deps_debian.sh
   apt:
-    pkg: [ 'g++', 'libeigen3-dev', 'mariadb-server', 'libmysqlcppconn-dev', 'zlib1g-dev', 'libpython3-dev', 'libjpeg-dev', 'docker.io', 'cmake', 'libssl-dev', 'python3-venv', 'libmariadb-dev', 'libmariadb-dev-compat', 'doxygen' ]
+    pkg: [ 'g++', 'libeigen3-dev', 'mariadb-server', 'libmysqlcppconn-dev', 'zlib1g-dev', 'libpython3-dev', 'libjpeg-dev', 'docker.io',
+           'cmake', 'libssl-dev', 'python3-venv', 'libmariadb-dev', 'libmariadb-dev-compat', 'doxygen' ]
 
 - name: Use journald for Docker logging
   copy:
     src: "docker-daemon.json"
     dest: "/etc/docker/daemon.json"
-  notify: restart docker
+    mode: 0644
+  notify: Restart Docker
 
 # User
 - name: Create service user
@@ -107,6 +111,7 @@
   template:
     src: "local_settings.py.j2"
     dest: "/opt/spn_meta/website/Programmierspiel/local_settings.py"
+    mode: 0644
 
 # Build
 - name: Build Schlangenprogrammierspiel
@@ -114,73 +119,92 @@
     chdir: "/opt/spn_meta"
     cmd: ./build.sh
   when: git_clone.changed
+  notify:
+    - Restart spn.target
+  tags:
+    - skip_ansible_lint
 
 - name: Build docker base image for bots
   command:
     chdir: "/opt/spn_meta/gameserver/docker4bots"
     cmd: "./0_build_spn_cpp_base.sh"
   when: git_clone.changed
+  notify:
+    - Restart spn.target
+  tags:
+    - skip_ansible_lint
 
 - name: Create directory for static website
   file:
     name: "/opt/spn_static"
     state: directory
+    mode: 0755
 
 - name: Build static website
   shell:
     chdir: "/opt/spn_meta/website"
     cmd: ". env/bin/activate; ./manage.py collectstatic --noinput"
   when: git_clone.changed
+  tags:
+    - skip_ansible_lint
 
 - name: Create directory for Doxygen API documentation
   file:
     name: "/opt/spn_meta/website/docs/static/docs/doxygen_cpp"
     state: directory
+    mode: 0755
 
 - name: Build Doxygen API documentation
   command:
     chdir: "/opt/spn_meta/website/docs/doxygen"
     cmd: "doxygen"
   when: git_clone.changed
+  tags:
+    - skip_ansible_lint
 
 - name: Create directory for compiled bots
   file:
     name: "/opt/spn_meta/gameserver/docker4bots/compiled_bots"
     owner: "spn"
     state: "directory"
+    mode: 0755
 
 # Nginx
 - name: Create SPN Nginx site config
   template:
     src: "nginx.conf.j2"
     dest: "/etc/nginx/sites-available/spn"
-  notify: restart nginx
+    mode: 0644
+  notify: Restart Nginx
 
 - name: Enable SPN Nginx site config
   file:
     src: "/etc/nginx/sites-available/spn"
     dest: "/etc/nginx/sites-enabled/spn"
     state: link
-  notify: restart nginx
+  notify: Restart Nginx
 
 - name: Disable default Nginx site config
   file:
     name: "/etc/nginx/sites-enabled/default"
     state: absent
-  notify: restart nginx
+  notify: Restart Nginx
 
 # Systemd services
 - name: Copy systemd service files
   copy:
     src: "{{ item }}"
     dest: "/etc/systemd/system/{{ item }}"
+    mode: 0644
   loop:
     - spn.target
     - spn-builder.service
     - spn-gameserver.service
     - spn-relayserver.service
     - spn-website.service
-  notify: reload systemd daemon
+  notify:
+    - Reload systemd daemon
+    - Restart spn.target
 
 - name: Enable and start spn.target
   systemd:

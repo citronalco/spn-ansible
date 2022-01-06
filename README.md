@@ -16,7 +16,9 @@ Wenn nichts konfiguriert wird werden die unten angegebenen Einstellungen verwend
 
 ```
 schlangenprogrammierspiel:
-  git_repository: https://github.com/schlangenprogrammiernacht/spn-meta.git
+  git:
+    repository: https://github.com/schlangenprogrammiernacht/spn-meta.git
+    version: master
   database:
     host: localhost
     db: spn
