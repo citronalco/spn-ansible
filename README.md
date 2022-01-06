@@ -1,6 +1,8 @@
 # Schlangenprogrammierspiel - Installation mit Ansible
 
-Installiert das Schlangenprogrammierspiel von https://github.com/schlangenprogrammiernacht
+Installiert das Schlangenprogrammierspiel von https://github.com/schlangenprogrammiernacht unter Debian 11.
+
+Nach der Installation ist das Schlangenprogrammierspiel auf dem Zielrechner unter Port 80 bzw. dem in der Variable ``schlangenprogrammierspiel.web_port`` (siehe unten) angegebenen Port erreichbar.
 
 ## Voraussetzungen:
 - Die Anmeldung auf dem Zielrechner als root muss mit ssh-key, also ohne Passwort, funktionieren.
@@ -27,8 +29,6 @@ schlangenprogrammierspiel:
 
 ## Installation
 ```ansible-playbook -i hosts schlangenprogrammierspiel.yml```
-
-Nach der Installation ist das Schlangenprogrammierspiel auf dem Zielrechner unter Port 80 bzw. dem in der Variable schlangenprogrammierspiel.web_port angegebenen Port verfügbar.
 
 ## Start/Stopp
 - Stopp: ```systemctl stop spn.target```
