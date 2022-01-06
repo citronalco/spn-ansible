@@ -64,7 +64,7 @@
 
 - name: Install packages listed in spn_meta/install_deps_debian.sh
   apt:
-    pkg: [ 'g++', 'libeigen3-dev', 'mariadb-server', 'libmysqlcppconn-dev', 'zlib1g-dev', 'libpython3-dev', 'libjpeg-dev', 'docker.io', 'cmake', 'libssl-dev', 'python3-venv', 'libmariadbclient-dev', 'libmariadb-dev-compat', 'doxygen' ]
+    pkg: [ 'g++', 'libeigen3-dev', 'mariadb-server', 'libmysqlcppconn-dev', 'zlib1g-dev', 'libpython3-dev', 'libjpeg-dev', 'docker.io', 'cmake', 'libssl-dev', 'python3-venv', 'libmariadb-dev', 'libmariadb-dev-compat', 'doxygen' ]
 
 - name: Use journald for Docker logging
   copy:
