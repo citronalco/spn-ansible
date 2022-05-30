@@ -1,6 +1,7 @@
 - name: Install prerequisites
   apt:
     pkg: [ 'git', 'nginx', 'python3-pymysql' ]
+    update_cache: yes
 
 # Configuration files
 - name: Create configuration directory /etc/spn
@@ -62,6 +63,7 @@
     repo: "{{ schlangenprogrammierspiel.git.repository | default('https://github.com/schlangenprogrammiernacht/spn-meta.git') }}"
     dest: "/opt/spn_meta"
     version: "{{ schlangenprogrammierspiel.git.version | default('master') }}"
+    accept_hostkey: yes
   register: git_clone
 
 - name: Install packages as listed in spn_meta/install_deps_debian.sh
@@ -127,18 +129,10 @@
 - name: Build docker base image for bots
   command:
     chdir: "/opt/spn_meta/gameserver/docker4bots"
-    cmd: "./0_build_spn_cpp_base.sh"
+    cmd: "./00_build_all_base_containers.sh"
   when: git_clone.changed
-  notify:
-    - Restart spn.target
   tags:
     - skip_ansible_lint
-
-- name: Create directory for static website
-  file:
-    name: "/opt/spn_static"
-    state: directory
-    mode: 0755
 
 - name: Build static website
   shell:
@@ -148,16 +142,10 @@
   tags:
     - skip_ansible_lint
 
-- name: Create directory for Doxygen API documentation
-  file:
-    name: "/opt/spn_meta/website/docs/static/docs/doxygen_cpp"
-    state: directory
-    mode: 0755
-
-- name: Build Doxygen API documentation
+- name: Build documentation for the bot frameworks
   command:
-    chdir: "/opt/spn_meta/website/docs/doxygen"
-    cmd: "doxygen"
+    chdir: "/opt/spn_meta/gameserver/docker4bots"
+    cmd: "./01_build_all_docs_for_website.sh"
   when: git_clone.changed
   tags:
     - skip_ansible_lint
