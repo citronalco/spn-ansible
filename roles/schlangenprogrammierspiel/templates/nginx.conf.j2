@@ -16,10 +16,6 @@ server {
   }
 
   location /static/ {
-    alias /opt/spn_static/;
-  }
-
-  location /static/docs/doxygen_cpp/html/ {
-    alias /opt/spn_meta/website/docs/static/docs/doxygen_cpp/html/;
+    alias /var/www/spn/staticfiles/;
   }
 }
