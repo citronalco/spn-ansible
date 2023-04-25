@@ -134,18 +134,18 @@
   tags:
     - skip_ansible_lint
 
-- name: Build static website
-  shell:
-    chdir: "/opt/spn_meta/website"
-    cmd: ". env/bin/activate; ./manage.py collectstatic --noinput"
-  when: git_clone.changed
-  tags:
-    - skip_ansible_lint
-
 - name: Build documentation for the bot frameworks
   command:
     chdir: "/opt/spn_meta/gameserver/docker4bots"
     cmd: "./01_build_all_docs_for_website.sh"
+  when: git_clone.changed
+  tags:
+    - skip_ansible_lint
+
+- name: Build static website
+  shell:
+    chdir: "/opt/spn_meta/website"
+    cmd: ". env/bin/activate; ./manage.py collectstatic --noinput"
   when: git_clone.changed
   tags:
     - skip_ansible_lint
